@@ -6,7 +6,6 @@ import com.lmax.disruptor.dsl.Disruptor;
  * 是一个可以保证hash值相同的任务分到同一个线程上处理的固定大小的线程池. 注意每个任务最好都是非常快的计算任务, 否则可能会导致积压.
  *
  * @author xzchaoo
- * @date 2019/7/23
  */
 public interface HashedWorkerPool {
     /**
@@ -45,13 +44,14 @@ public interface HashedWorkerPool {
      *
      * @param payload  负载
      * @param consumer
+     * @param <P> payload type
      */
     <P> void broadcast(P payload, Consumer<P> consumer);
 
     /**
      * 该线程池大小
      *
-     * @return
+     * @return size
      */
     int size();
 

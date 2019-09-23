@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * @author xzchaoo
- * @date 2019/7/23
  */
 @SuppressWarnings({"unchecked", "FieldCanBeLocal"})
 public class HashedWorkerPoolImpl implements HashedWorkerPool {

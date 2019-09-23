@@ -4,7 +4,6 @@ package com.xzchaoo.hashedworkerpool.core;
  * 消费者接口
  *
  * @author xzchaoo
- * @date 2019/7/23
  */
 @FunctionalInterface
 public interface Consumer<P> {

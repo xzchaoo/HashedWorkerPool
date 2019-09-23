@@ -4,7 +4,6 @@ package com.xzchaoo.hashedworkerpool.core;
  * disruptor处理的事件模型
  *
  * @author xzchaoo
- * @date 2019/7/23
  */
 public class EventHolder<P> {
     int         hash;

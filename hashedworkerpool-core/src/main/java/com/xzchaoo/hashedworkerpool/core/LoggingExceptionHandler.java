@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author xzchaoo
- * @date 2019/7/25
  */
 public class LoggingExceptionHandler implements ExceptionHandler<EventHolder> {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingExceptionHandler.class);
