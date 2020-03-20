@@ -23,12 +23,11 @@ public class DisruptorEventLoopManager extends AbstractEventLoopManager {
 
     @Override
     protected AbstractEventLoop createEventLoop(EventLoopConfig config) {
-        return new DisruptorEventLoop(config.getName(), config.getIndex(), config.getManagerConfig().getEventLoopBufferSize(),
-                waitStrategy, this, config.getEventLoopThreadFactory());
+        return new DisruptorEventLoop(config, waitStrategy, this);
     }
 
     @Override
-    protected final DisruptorEventLoop eventLoop(int index) {
+    public final DisruptorEventLoop eventLoop(int index) {
         return (DisruptorEventLoop) super.eventLoop(index);
     }
 

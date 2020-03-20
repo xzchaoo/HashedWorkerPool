@@ -12,6 +12,10 @@ import java.util.concurrent.TimeUnit;
 public interface EventLoop {
     EventLoopManager manager();
 
+    ScheduledExecutorService scheduler();
+
+    ScheduledExecutorService globalScheduler();
+
     <P> void publish1(P payload, Consumer<P> consumer);
 
     <P> void publish1(P payload, Object arg1, Consumer<P> consumer);
@@ -34,10 +38,6 @@ public interface EventLoop {
 
     boolean inEventLoop(Thread thread);
 
-    ScheduledExecutorService scheduler();
-
-    ScheduledExecutorService globalScheduler();
-
     ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit);
 
     ScheduledFuture<?> schedule(java.util.function.Consumer<EventLoop> consumer, long delay, TimeUnit unit);
@@ -46,4 +46,6 @@ public interface EventLoop {
 
     ScheduledFuture<?> scheduledWithFixedDelay(java.util.function.Consumer<EventLoop> consumer, long delay, long period,
                                                TimeUnit unit);
+
+    <P> void register(Object type, ConsumerFactory<P> factory);
 }

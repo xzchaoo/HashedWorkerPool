@@ -1,7 +1,5 @@
 package com.xzchaoo.eventloop.disruptor;
 
-import java.util.List;
-
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -10,7 +8,10 @@ import com.xzchaoo.eventloop.AbstractEventLoop;
 import com.xzchaoo.eventloop.BatchPublish;
 import com.xzchaoo.eventloop.Consumer;
 import com.xzchaoo.eventloop.Event;
+import com.xzchaoo.eventloop.EventLoopConfig;
 import com.xzchaoo.eventloop.SingleThreadFactory;
+
+import java.util.List;
 
 /**
  * created at 2020/3/19
@@ -18,15 +19,17 @@ import com.xzchaoo.eventloop.SingleThreadFactory;
  * @author xzchaoo
  */
 public class DisruptorEventLoop extends AbstractEventLoop {
-    private final Disruptor<Event<Object>>  disruptor;
+    private final Disruptor<Event<Object>> disruptor;
     private final RingBuffer<Event<Object>> ringBuffer;
 
-    DisruptorEventLoop(String name, int index, int ringBufferSize,
-                       WaitStrategy waitStrategy,
-                       DisruptorEventLoopManager manager,
-                       SingleThreadFactory threadFactory) {
-        super(name, index, manager, threadFactory);
-        disruptor = new Disruptor<>(() -> new Event<>(index), ringBufferSize, threadFactory, ProducerType.MULTI, waitStrategy);
+    DisruptorEventLoop(EventLoopConfig config, WaitStrategy waitStrategy, DisruptorEventLoopManager manager) {
+        super(config, manager);
+        int eventLoopBufferSize = config.getManagerConfig().getEventLoopBufferSize();
+        SingleThreadFactory eventLoopThreadFactory = config.getEventLoopThreadFactory();
+        disruptor = new Disruptor<>(() -> new Event<>(index), eventLoopBufferSize, eventLoopThreadFactory,
+            ProducerType.MULTI, waitStrategy);
+        // TODO
+        // disruptor.setDefaultExceptionHandler();
         disruptor.handleEventsWith(this::onEvent);
         ringBuffer = disruptor.getRingBuffer();
     }
@@ -68,7 +71,7 @@ public class DisruptorEventLoop extends AbstractEventLoop {
         if (batch == null) {
             return;
         }
-        List<Event<?>> events = batch.getEvents();
+        List<BatchPublish.Event<?>> events = batch.getEvents();
         if (events.isEmpty()) {
             return;
         }
@@ -76,7 +79,7 @@ public class DisruptorEventLoop extends AbstractEventLoop {
         long hi = ringBuffer.next(size);
         long lo = hi - size + 1;
         long i = lo;
-        for (Event<?> event : events) {
+        for (BatchPublish.Event<?> event : events) {
             Event<Object> event2 = ringBuffer.get(i++);
             event2.type = event.type;
             event2.payload = event.payload;

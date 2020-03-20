@@ -13,18 +13,18 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public abstract class AbstractEventLoopManager implements EventLoopManager {
     private static final AtomicIntegerFieldUpdater<AbstractEventLoopManager> UPDATER =
-            AtomicIntegerFieldUpdater.newUpdater(AbstractEventLoopManager.class, "state");
+        AtomicIntegerFieldUpdater.newUpdater(AbstractEventLoopManager.class, "state");
 
-    private static final int                         STATE_NOT_INIT = 0;
-    private static final int                         STATE_RUNNING  = 1;
-    private static final int                         STATE_STOPPED  = 2;
-    protected final      int                         size;
-    protected final      int                         mask;
-    protected final      EventLoopManagerConfig      properties;
-    protected final      ScheduledThreadPoolExecutor scheduler;
-    protected final      String                      name;
-    protected final      AbstractEventLoop[]         eventLoops;
-    private volatile     int                         state          = STATE_NOT_INIT;
+    private static final int STATE_NOT_INIT = 0;
+    private static final int STATE_RUNNING = 1;
+    private static final int STATE_STOPPED = 2;
+    protected final int size;
+    protected final int mask;
+    protected final EventLoopManagerConfig properties;
+    protected final ScheduledThreadPoolExecutor scheduler;
+    protected final String name;
+    protected final AbstractEventLoop[] eventLoops;
+    private volatile int state = STATE_NOT_INIT;
 
     public AbstractEventLoopManager(EventLoopManagerConfig properties) {
         this.properties = properties;
@@ -34,8 +34,8 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
         this.mask = size - 1;
         eventLoops = new AbstractEventLoop[size];
         ThreadFactory globalSchedulerThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat(name + "-GlobalScheduler-%d")
-                .build();
+            .setNameFormat(name + "-GlobalScheduler-%d")
+            .build();
         scheduler = new ScheduledThreadPoolExecutor(properties.getGlobalSchedulerSize(), globalSchedulerThreadFactory);
     }
 
@@ -70,12 +70,12 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
     @Override
     public final <P> void publish1(int hash, P payload, Object arg1, Object arg2, Consumer<P> consumer) {
         int index = index(hash);
-        eventLoop(index).publish0(null, payload, arg1, arg2, consumer);
+        eventLoops[index].publish0(null, payload, arg1, arg2, consumer);
     }
 
     @Override
     public final <P> void publish2(int hash, Object type, P payload) {
-        publish2(hash, 0, payload, null, null);
+        publish2(hash, type, payload, null, null);
     }
 
     @Override
@@ -86,7 +86,7 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
     @Override
     public final <P> void publish2(int hash, Object type, P payload, Object arg1, Object arg2) {
         int index = index(hash);
-        eventLoop(index).publish2(type, payload, arg1, arg2);
+        eventLoops[index].publish2(type, payload, arg1, arg2);
     }
 
     @Override
@@ -116,7 +116,7 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
 
     protected void doStart() {
         for (int i = 0; i < size; i++) {
-            eventLoop(i).start();
+            eventLoops[i].start();
         }
     }
 
@@ -138,7 +138,7 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
 
     protected void doStop() {
         for (int i = 0; i < size; i++) {
-            eventLoop(i).stop();
+            eventLoops[i].stop();
         }
     }
 
@@ -159,13 +159,14 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
      */
     public final <P> void register(Object type, Consumer<P> consumer) {
         for (int i = 0; i < size; i++) {
-            eventLoop(i).register(type, consumer);
+            eventLoops[i].register(type, consumer);
         }
     }
 
+    @Override
     public final <P> void register(Object type, ConsumerFactory<P> factory) {
         for (int i = 0; i < size; i++) {
-            eventLoop(i).register(type, factory);
+            eventLoops[i].register(type, factory);
         }
     }
 
@@ -190,12 +191,46 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
         for (int i = 0; i < subBatches.length; i++) {
             BatchPublish subBatch = subBatches[i];
             if (subBatch != null) {
-                eventLoop(i).batchPublish(subBatch);
+                eventLoops[i].batchPublish(subBatch);
             }
         }
     }
 
     private int index(int hash) {
         return hash & mask;
+    }
+
+    @Override
+    public <P> void broadcast1(P payload, Consumer<P> consumer) {
+        broadcast1(payload, null, null, consumer);
+    }
+
+    @Override
+    public <P> void broadcast1(P payload, Object arg1, Consumer<P> consumer) {
+        broadcast1(payload, arg1, null, consumer);
+    }
+
+    @Override
+    public <P> void broadcast1(P payload, Object arg1, Object arg2, Consumer<P> consumer) {
+        for (int i = 0; i < size; i++) {
+            eventLoops[i].publish1(payload, arg1, arg2, consumer);
+        }
+    }
+
+    @Override
+    public <P> void broadcast2(Object type, P payload) {
+        broadcast2(type, payload, null, null);
+    }
+
+    @Override
+    public <P> void broadcast2(Object type, P payload, Object arg1) {
+        broadcast2(type, payload, arg1, null);
+    }
+
+    @Override
+    public <P> void broadcast2(Object type, P payload, Object arg1, Object arg2) {
+        for (int i = 0; i < size; i++) {
+            eventLoops[i].publish2(type, payload, arg1, arg2);
+        }
     }
 }

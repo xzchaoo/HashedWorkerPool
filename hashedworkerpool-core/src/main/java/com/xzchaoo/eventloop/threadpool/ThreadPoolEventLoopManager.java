@@ -18,12 +18,11 @@ public class ThreadPoolEventLoopManager extends AbstractEventLoopManager {
 
     @Override
     protected AbstractEventLoop createEventLoop(EventLoopConfig config) {
-        return new ThreadPoolEventLoop(config.getName(), config.getIndex(), this, config.getManagerConfig().getEventLoopBufferSize(),
-                config.getEventLoopThreadFactory());
+        return new ThreadPoolEventLoop(config, this);
     }
 
     @Override
-    protected ThreadPoolEventLoop eventLoop(int index) {
+    public ThreadPoolEventLoop eventLoop(int index) {
         return (ThreadPoolEventLoop) super.eventLoop(index);
     }
 }

@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * created at 2020/3/20
@@ -17,18 +18,21 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public abstract class AbstractEventLoop implements EventLoop {
     protected static final AtomicIntegerFieldUpdater<AbstractEventLoop> UPDATER =
-            AtomicIntegerFieldUpdater.newUpdater(AbstractEventLoop.class, "state");
+        AtomicIntegerFieldUpdater.newUpdater(AbstractEventLoop.class, "state");
 
-    protected static final int                      STATE_NOT_INIT = 0;
-    protected static final int                      STATE_RUNNING  = 1;
-    protected static final int                      STATE_STOPPED  = 2;
-    protected final        String                   name;
-    protected final        int                      index;
-    protected final        EventLoopManager         manager;
-    protected volatile     int                      state          = STATE_NOT_INIT;
-    protected final        Map<Object, Consumer<?>> processMap     = new HashMap<>();
-    protected final        ScheduledExecutorService scheduler;
-    protected volatile     Thread                   eventLoopThread;
+    protected static final int STATE_NOT_INIT = 0;
+    protected static final int STATE_RUNNING = 1;
+    protected static final int STATE_STOPPED = 2;
+    protected final String name;
+    protected final int index;
+    protected final EventLoopManager manager;
+    protected volatile int state = STATE_NOT_INIT;
+    protected final ScheduledExecutorService scheduler;
+    protected volatile Thread eventLoopThread;
+
+    private volatile Map<Object, Consumer<?>> processMap = new HashMap<>();
+    private static final AtomicReferenceFieldUpdater<AbstractEventLoop, Map> PROCESS_MAP_UPDATER =
+        AtomicReferenceFieldUpdater.newUpdater(AbstractEventLoop.class, Map.class, "processMap");
 
     public AbstractEventLoop(EventLoopConfig config, EventLoopManager manager) {
         this.name = config.getName();
@@ -37,8 +41,8 @@ public abstract class AbstractEventLoop implements EventLoop {
         SingleThreadFactory threadFactory = config.getEventLoopThreadFactory();
         threadFactory.setNotify(this::setEventLoopThread);
         ThreadFactory schedulerThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat(name + "-Scheduler")
-                .build();
+            .setNameFormat(name + "-Scheduler")
+            .build();
         scheduler = new ScheduledThreadPoolExecutor(1, schedulerThreadFactory);
     }
 
@@ -160,17 +164,38 @@ public abstract class AbstractEventLoop implements EventLoop {
      * @param <P>
      */
     public final <P> void register(Object type, Consumer<P> consumer) {
-        if (processMap.containsKey(type)) {
-            throw new IllegalStateException("Duplicated type " + type);
+        for (; ; ) {
+            // PROCESS_MAP_UPDATER
+            Map<Object, Consumer<?>> processMap = this.processMap;
+            if (processMap.containsKey(type)) {
+                throw new IllegalStateException("Duplicated type " + type);
+            }
+            Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap);
+            newProcessMap.put(type, consumer);
+            if (PROCESS_MAP_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
+                break;
+            }
         }
-        processMap.put(type, consumer);
     }
 
+    @Override
     public final <P> void register(Object type, ConsumerFactory<P> factory) {
-        if (processMap.containsKey(type)) {
-            throw new IllegalStateException("Duplicated type " + type);
+        Consumer<P> consumer = null;
+        for (; ; ) {
+            // PROCESS_MAP_UPDATER
+            Map<Object, Consumer<?>> processMap = this.processMap;
+            if (processMap.containsKey(type)) {
+                throw new IllegalStateException("Duplicated type " + type);
+            }
+            Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap);
+            if (consumer == null) {
+                consumer = factory.create(index);
+            }
+            newProcessMap.put(type, consumer);
+            if (PROCESS_MAP_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
+                break;
+            }
         }
-        processMap.put(type, factory.create(index));
     }
 
     @Override
