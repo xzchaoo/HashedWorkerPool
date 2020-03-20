@@ -1,4 +1,4 @@
-package com.xzchaoo.hashedworkerpool.ext;
+package com.xzchaoo.eventloop;
 
 /**
  * consumer factory

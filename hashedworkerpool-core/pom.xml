@@ -26,6 +26,12 @@
 			<version>26.0-jre</version>
 			<!--<scope>test</scope>-->
 		</dependency>
+		<dependency>
+			<groupId>org.jctools</groupId>
+			<artifactId>jctools-core</artifactId>
+			<version>3.0.0</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 </project>

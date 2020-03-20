@@ -1,4 +1,4 @@
-package com.xzchaoo.hashedworkerpool.ext;
+package com.xzchaoo.eventloop;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -12,19 +12,27 @@ import java.util.concurrent.TimeUnit;
 public interface EventLoop {
     EventLoopManager manager();
 
-    <P> void publish(Event<P> event);
+    <P> void publish1(P payload, Consumer<P> consumer);
 
-    <P> void publish(P payload, Consumer<P> consumer);
+    <P> void publish1(P payload, Object arg1, Consumer<P> consumer);
 
-    <P> void publish(P payload, Object arg1, Object arg2, Consumer<P> consumer);
+    <P> void publish1(P payload, Object arg1, Object arg2, Consumer<P> consumer);
 
-    <P> void publish(int type, P payload);
+    <P> void publish2(Object type, P payload);
 
-    <P> void publish(int type, P payload, Object arg1, Object arg2);
+    <P> void publish2(Object type, P payload, Object arg1);
+
+    <P> void publish2(Object type, P payload, Object arg1, Object arg2);
+
+    void batchPublish(BatchPublish batch);
 
     void start();
 
     void stop();
+
+    boolean inEventLoop();
+
+    boolean inEventLoop(Thread thread);
 
     ScheduledExecutorService scheduler();
 
