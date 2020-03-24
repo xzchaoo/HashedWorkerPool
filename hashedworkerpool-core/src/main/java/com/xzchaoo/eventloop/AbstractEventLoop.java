@@ -189,7 +189,7 @@ public abstract class AbstractEventLoop implements EventLoop {
             }
             Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap);
             if (consumer == null) {
-                consumer = factory.create(index);
+                consumer = factory.create(this);
             }
             newProcessMap.put(type, consumer);
             if (PROCESS_MAP_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
@@ -231,5 +231,10 @@ public abstract class AbstractEventLoop implements EventLoop {
             }
             publish0(event.type, event.payload, event.arg1, event.arg2, consumer);
         }
+    }
+
+    @Override
+    public int index() {
+        return index;
     }
 }

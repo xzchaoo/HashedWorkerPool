@@ -6,6 +6,7 @@ import com.xzchaoo.eventloop.AbstractEventLoopManager;
 import com.xzchaoo.eventloop.Consumer;
 import com.xzchaoo.eventloop.ConsumerFactory;
 import com.xzchaoo.eventloop.Event;
+import com.xzchaoo.eventloop.EventLoop;
 import com.xzchaoo.eventloop.EventLoopManagerConfig;
 import com.xzchaoo.eventloop.disruptor.DisruptorEventLoopManager;
 
@@ -24,11 +25,11 @@ public class DisruptorEventLoopManagerTest {
         AbstractEventLoopManager m = new DisruptorEventLoopManager(p);
         m.register(1, new ConsumerFactory<String>() {
             @Override
-            public Consumer<String> create(int index) {
+            public Consumer<String> create(EventLoop eventLoop) {
                 return new Consumer<String>() {
                     @Override
                     public void accept(Event<String> event) {
-                        System.out.println("在线程 " + Thread.currentThread() + " " + index + " 处理事件" + event);
+                        System.out.println("在线程 " + Thread.currentThread() + " " + eventLoop.index() + " 处理事件" + event);
                     }
                 };
             }

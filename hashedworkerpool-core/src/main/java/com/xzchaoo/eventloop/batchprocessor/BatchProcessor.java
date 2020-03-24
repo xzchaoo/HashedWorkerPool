@@ -83,9 +83,9 @@ public class BatchProcessor<T> {
         private final Semaphore semaphore;
         private final EventLoop eventLoop;
 
-        private Handler(int index) {
-            eventLoop = manager.eventLoop(index);
-            flusher = flusherFactory.apply(index);
+        private Handler(EventLoop eventLoop) {
+            this.eventLoop = eventLoop;
+            flusher = flusherFactory.apply(eventLoop.index());
             semaphore = new Semaphore(10);
         }
 

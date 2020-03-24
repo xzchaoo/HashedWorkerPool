@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
  * @author xzchaoo
  */
 public interface EventLoop {
+    int index();
+
     EventLoopManager manager();
 
     ScheduledExecutorService scheduler();
