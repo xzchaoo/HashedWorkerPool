@@ -37,7 +37,7 @@ public class BatchProcessor<T> {
     }
 
     public void start() {
-        manager.register(identity, Handler::new);
+        manager.register2(identity, Handler::new);
         scheduledFuture = manager.globalScheduler()
             .scheduleWithFixedDelay(this::flush, 1, 1, TimeUnit.SECONDS);
     }

@@ -23,7 +23,7 @@ public class DisruptorEventLoopManagerTest {
         p.setName("test");
         // AbstractEventLoopManager m = new ThreadPoolEventLoopManager(p);
         AbstractEventLoopManager m = new DisruptorEventLoopManager(p);
-        m.register(1, new ConsumerFactory<String>() {
+        m.register2(1, new ConsumerFactory<String>() {
             @Override
             public Consumer<String> create(EventLoop eventLoop) {
                 return new Consumer<String>() {

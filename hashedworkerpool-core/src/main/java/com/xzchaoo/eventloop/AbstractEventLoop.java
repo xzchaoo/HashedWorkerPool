@@ -30,9 +30,14 @@ public abstract class AbstractEventLoop implements EventLoop {
     protected final ScheduledExecutorService scheduler;
     protected volatile Thread eventLoopThread;
 
-    private volatile Map<Object, Consumer<?>> processMap = new HashMap<>();
+    private volatile Map<Object, Consumer<?>> processMap2 = new HashMap<>();
+    private volatile Map<Integer, Consumer<?>> processMap3 = new HashMap<>();
+
     private static final AtomicReferenceFieldUpdater<AbstractEventLoop, Map> PROCESS_MAP_UPDATER =
-        AtomicReferenceFieldUpdater.newUpdater(AbstractEventLoop.class, Map.class, "processMap");
+        AtomicReferenceFieldUpdater.newUpdater(AbstractEventLoop.class, Map.class, "processMap2");
+
+    private static final AtomicReferenceFieldUpdater<AbstractEventLoop, Map> PROCESS_MAP3_UPDATER =
+        AtomicReferenceFieldUpdater.newUpdater(AbstractEventLoop.class, Map.class, "processMap3");
 
     public AbstractEventLoop(EventLoopConfig config, EventLoopManager manager) {
         this.name = config.getName();
@@ -56,33 +61,22 @@ public abstract class AbstractEventLoop implements EventLoop {
     }
 
     @Override
-    public final <P> void publish1(P payload, Consumer<P> consumer) {
-        publish0(0, payload, null, null, consumer);
-    }
-
-    @Override
-    public <P> void publish1(P payload, Object arg1, Consumer<P> consumer) {
-        publish0(0, payload, arg1, null, consumer);
-    }
-
-    @Override
     public final <P> void publish1(P payload, Object arg1, Object arg2, Consumer<P> consumer) {
-        publish0(0, payload, arg1, arg2, consumer);
-    }
-
-    @Override
-    public final <P> void publish2(Object type, P payload) {
-        publish2(type, payload, null, null);
-    }
-
-    @Override
-    public <P> void publish2(Object type, P payload, Object arg1) {
-        publish2(type, payload, arg1, null);
+        publish0(null, payload, arg1, arg2, consumer);
     }
 
     @Override
     public final <P> void publish2(Object type, P payload, Object arg1, Object arg2) {
-        Consumer<P> consumer = (Consumer<P>) processMap.get(type);
+        Consumer<P> consumer = (Consumer<P>) processMap2.get(type);
+        if (consumer == null) {
+            return;
+        }
+        publish0(type, payload, arg1, arg2, consumer);
+    }
+
+    @Override
+    public final <P> void publish3(int type, P payload, Object arg1, Object arg2) {
+        Consumer<P> consumer = (Consumer<P>) processMap3.get(type);
         if (consumer == null) {
             return;
         }
@@ -158,19 +152,19 @@ public abstract class AbstractEventLoop implements EventLoop {
         return scheduler.scheduleWithFixedDelay(() -> publish0(event -> consumer.accept(this)), delay, period, unit);
     }
 
-    /**
-     * @param type
-     * @param consumer 必须是线程安全的实现
-     * @param <P>
-     */
-    public final <P> void register(Object type, Consumer<P> consumer) {
+    @Override
+    public final <P> void register2(Object type, ConsumerFactory<P> factory) {
+        Consumer<P> consumer = null;
         for (; ; ) {
             // PROCESS_MAP_UPDATER
-            Map<Object, Consumer<?>> processMap = this.processMap;
+            Map<Object, Consumer<?>> processMap = this.processMap2;
             if (processMap.containsKey(type)) {
                 throw new IllegalStateException("Duplicated type " + type);
             }
-            Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap);
+            Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap2);
+            if (consumer == null) {
+                consumer = factory.create(this);
+            }
             newProcessMap.put(type, consumer);
             if (PROCESS_MAP_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
                 break;
@@ -179,20 +173,20 @@ public abstract class AbstractEventLoop implements EventLoop {
     }
 
     @Override
-    public final <P> void register(Object type, ConsumerFactory<P> factory) {
+    public final <P> void register3(int type, ConsumerFactory<P> factory) {
         Consumer<P> consumer = null;
         for (; ; ) {
             // PROCESS_MAP_UPDATER
-            Map<Object, Consumer<?>> processMap = this.processMap;
+            Map<Integer, Consumer<?>> processMap = this.processMap3;
             if (processMap.containsKey(type)) {
                 throw new IllegalStateException("Duplicated type " + type);
             }
-            Map<Object, Consumer<?>> newProcessMap = new HashMap<>(this.processMap);
+            Map<Integer, Consumer<?>> newProcessMap = new HashMap<>(this.processMap3);
             if (consumer == null) {
                 consumer = factory.create(this);
             }
             newProcessMap.put(type, consumer);
-            if (PROCESS_MAP_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
+            if (PROCESS_MAP3_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
                 break;
             }
         }
@@ -224,7 +218,7 @@ public abstract class AbstractEventLoop implements EventLoop {
         for (BatchPublish.Event<?> event : events) {
             Consumer<Object> consumer = (Consumer<Object>) event.consumer;
             if (consumer == null) {
-                consumer = (Consumer<Object>) processMap.get(event.type);
+                consumer = (Consumer<Object>) processMap2.get(event.type);
             }
             if (consumer == null) {
                 continue;

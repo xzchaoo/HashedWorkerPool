@@ -30,13 +30,21 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
         this.properties = properties;
         this.name = properties.getName();
         // TODO check 2^n
-        this.size = properties.getSize();
+        int size = properties.getSize();
+        if (size <= 0) {
+            size = Runtime.getRuntime().availableProcessors();
+        }
+        this.size = size;
         this.mask = size - 1;
         eventLoops = new AbstractEventLoop[size];
         ThreadFactory globalSchedulerThreadFactory = new ThreadFactoryBuilder()
             .setNameFormat(name + "-GlobalScheduler-%d")
             .build();
-        scheduler = new ScheduledThreadPoolExecutor(properties.getGlobalSchedulerSize(), globalSchedulerThreadFactory);
+        int globalSchedulerSize = properties.getGlobalSchedulerSize();
+        if (globalSchedulerSize <= 0) {
+            globalSchedulerSize = Runtime.getRuntime().availableProcessors() * 2;
+        }
+        scheduler = new ScheduledThreadPoolExecutor(globalSchedulerSize, globalSchedulerThreadFactory);
     }
 
     /**
@@ -58,29 +66,9 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
     protected abstract AbstractEventLoop createEventLoop(EventLoopConfig config);
 
     @Override
-    public final <P> void publish1(int hash, P payload, Consumer<P> consumer) {
-        publish1(hash, payload, null, null, consumer);
-    }
-
-    @Override
-    public <P> void publish1(int hash, P payload, Object arg1, Consumer<P> consumer) {
-        publish1(hash, payload, arg1, null, consumer);
-    }
-
-    @Override
     public final <P> void publish1(int hash, P payload, Object arg1, Object arg2, Consumer<P> consumer) {
         int index = index(hash);
         eventLoops[index].publish0(null, payload, arg1, arg2, consumer);
-    }
-
-    @Override
-    public final <P> void publish2(int hash, Object type, P payload) {
-        publish2(hash, type, payload, null, null);
-    }
-
-    @Override
-    public <P> void publish2(int hash, Object type, P payload, Object arg1) {
-        publish2(hash, type, payload, arg1, null);
     }
 
     @Override
@@ -152,21 +140,17 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
         return size;
     }
 
-    /**
-     * @param type
-     * @param consumer 必须是线程安全的实现
-     * @param <P>
-     */
-    public final <P> void register(Object type, Consumer<P> consumer) {
+    @Override
+    public final <P> void register2(Object type, ConsumerFactory<P> factory) {
         for (int i = 0; i < size; i++) {
-            eventLoops[i].register(type, consumer);
+            eventLoops[i].register2(type, factory);
         }
     }
 
     @Override
-    public final <P> void register(Object type, ConsumerFactory<P> factory) {
+    public final <P> void register3(int type, ConsumerFactory<P> factory) {
         for (int i = 0; i < size; i++) {
-            eventLoops[i].register(type, factory);
+            eventLoops[i].register3(type, factory);
         }
     }
 
@@ -196,20 +180,6 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
         }
     }
 
-    private int index(int hash) {
-        return hash & mask;
-    }
-
-    @Override
-    public <P> void broadcast1(P payload, Consumer<P> consumer) {
-        broadcast1(payload, null, null, consumer);
-    }
-
-    @Override
-    public <P> void broadcast1(P payload, Object arg1, Consumer<P> consumer) {
-        broadcast1(payload, arg1, null, consumer);
-    }
-
     @Override
     public <P> void broadcast1(P payload, Object arg1, Object arg2, Consumer<P> consumer) {
         for (int i = 0; i < size; i++) {
@@ -218,19 +188,26 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
     }
 
     @Override
-    public <P> void broadcast2(Object type, P payload) {
-        broadcast2(type, payload, null, null);
-    }
-
-    @Override
-    public <P> void broadcast2(Object type, P payload, Object arg1) {
-        broadcast2(type, payload, arg1, null);
-    }
-
-    @Override
     public <P> void broadcast2(Object type, P payload, Object arg1, Object arg2) {
         for (int i = 0; i < size; i++) {
             eventLoops[i].publish2(type, payload, arg1, arg2);
         }
+    }
+
+    @Override
+    public <P> void publish3(int hash, int type, P payload, Object arg1, Object arg2) {
+        int index = index(hash);
+        eventLoops[index].publish3(type, payload, arg1, arg2);
+    }
+
+    @Override
+    public <P> void broadcast3(int type, P payload, Object arg1, Object arg2) {
+        for (int i = 0; i < size; i++) {
+            eventLoops[i].publish3(type, payload, arg1, arg2);
+        }
+    }
+
+    private int index(int hash) {
+        return hash & mask;
     }
 }
