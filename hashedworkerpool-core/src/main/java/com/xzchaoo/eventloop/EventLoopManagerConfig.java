@@ -9,11 +9,14 @@ import lombok.Data;
  */
 @Data
 public class EventLoopManagerConfig {
-    private String name                = "default";
-    private int    size                = 1;
-    private int    eventLoopBufferSize = 65536;
+    private String name = "default";
     /**
-     * default to CPU * 2
+     * default to CPU cores
      */
-    private int    globalSchedulerSize;
+    private int size;
+    private int eventLoopBufferSize = 65536;
+    /**
+     * default to CPU cores * 2
+     */
+    private int globalSchedulerSize;
 }

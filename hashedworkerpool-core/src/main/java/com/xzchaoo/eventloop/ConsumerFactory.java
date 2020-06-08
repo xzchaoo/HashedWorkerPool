@@ -11,8 +11,8 @@ public interface ConsumerFactory<P> {
     /**
      * create consumer for event loop
      *
-     * @param index event loop index
+     * @param eventLoop event loop
      * @return consumer for that event loop
      */
-    Consumer<P> create(int index);
+    Consumer<P> create(EventLoop eventLoop);
 }

@@ -31,6 +31,7 @@ public final class ThreadFactoryBuilder {
   public ThreadFactoryBuilder() {}
 
   public ThreadFactoryBuilder setNameFormat(String nameFormat) {
+    // noinspection unused
     String unused = format(nameFormat, 0); // fail fast if the format is bad or null
     this.nameFormat = nameFormat;
     return this;

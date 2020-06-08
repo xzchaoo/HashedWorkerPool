@@ -38,7 +38,7 @@ public class BatchProcessor<T> {
     }
 
     public void start() {
-        manager.register(identity, Handler::new);
+        manager.register2(identity, Handler::new);
         scheduledFuture = manager.globalScheduler()
                 .scheduleWithFixedDelay(this::flush, 1, 1, TimeUnit.SECONDS);
     }
@@ -85,9 +85,9 @@ public class BatchProcessor<T> {
         private final Semaphore  semaphore;
         private final EventLoop  eventLoop;
 
-        private Handler(int index) {
-            eventLoop = manager.eventLoop(index);
-            flusher = flusherFactory.apply(index);
+        private Handler(EventLoop eventLoop) {
+            this.eventLoop = eventLoop;
+            flusher = flusherFactory.apply(eventLoop.index());
             semaphore = new Semaphore(maxConcurrencyPerThread);
         }
 
