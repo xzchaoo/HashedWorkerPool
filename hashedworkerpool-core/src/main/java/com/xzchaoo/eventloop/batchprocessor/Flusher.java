@@ -9,9 +9,15 @@ import java.util.concurrent.Semaphore;
  * @author xzchaoo
  */
 public interface Flusher<T> {
-    void onMissingSemaphore(List<T> buffer, Semaphore semaphore);
+    void onMissingSemaphore(List<T> buffer, Semaphore semaphore, Context<T> ctx);
 
-    void flush(List<T> buffer, Context ctx);
+    /**
+     * 取得信号量, 并要求刷新
+     *
+     * @param buffer
+     * @param ctx
+     */
+    void flush(List<T> buffer, Context<T> ctx);
 
     interface Context<T> {
         void complete();

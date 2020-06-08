@@ -1,13 +1,5 @@
 package com.xzchaoo.eventloop.batchprocessor;
 
-import com.xzchaoo.eventloop.Consumer;
-import com.xzchaoo.eventloop.Event;
-import com.xzchaoo.eventloop.EventLoop;
-import com.xzchaoo.eventloop.EventLoopManager;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,20 +8,29 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.xzchaoo.eventloop.Consumer;
+import com.xzchaoo.eventloop.Event;
+import com.xzchaoo.eventloop.EventLoop;
+import com.xzchaoo.eventloop.EventLoopManager;
+
 /**
  * created at 2020/3/21
  *
  * @author xzchaoo
  */
 public class BatchProcessor<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BatchProcessor.class);
-    private static final Object FLUSH = new Object();
-    private final Object identity = new Object();
-    private final EventLoopManager manager;
-    private final IntFunction<Flusher<T>> flusherFactory;
-    private int hash;
-    private ScheduledFuture<?> scheduledFuture;
-    private final int maxBatchSize = 100;
+    private static final Logger                  LOGGER                  = LoggerFactory.getLogger(BatchProcessor.class);
+    private static final Object                  FLUSH                   = new Object();
+    private final        Object                  identity                = new Object();
+    private final        EventLoopManager        manager;
+    private final        IntFunction<Flusher<T>> flusherFactory;
+    private              int                     hash;
+    private              ScheduledFuture<?>      scheduledFuture;
+    private final        int                     maxBatchSize            = 100;
+    private final        int                     maxConcurrencyPerThread = 10;
 
     BatchProcessor(EventLoopManager manager, IntFunction<Flusher<T>> flusherFactory) {
         this.manager = Objects.requireNonNull(manager);
@@ -39,7 +40,7 @@ public class BatchProcessor<T> {
     public void start() {
         manager.register(identity, Handler::new);
         scheduledFuture = manager.globalScheduler()
-            .scheduleWithFixedDelay(this::flush, 1, 1, TimeUnit.SECONDS);
+                .scheduleWithFixedDelay(this::flush, 1, 1, TimeUnit.SECONDS);
     }
 
     public void flush() {
@@ -59,6 +60,7 @@ public class BatchProcessor<T> {
     }
 
     public void put(List<T> c) {
+        // 这里有冲突不要紧, 反正都是随机的
         int hash = this.hash++;
         int size = c.size();
         if (size <= maxBatchSize) {
@@ -78,15 +80,15 @@ public class BatchProcessor<T> {
     }
 
     private class Handler implements Consumer<T>, Flusher.Context<T> {
-        private final List<T> buffer = new ArrayList<>(maxBatchSize * 2);
+        private final List<T>    buffer = new ArrayList<>(maxBatchSize * 2);
         private final Flusher<T> flusher;
-        private final Semaphore semaphore;
-        private final EventLoop eventLoop;
+        private final Semaphore  semaphore;
+        private final EventLoop  eventLoop;
 
         private Handler(int index) {
             eventLoop = manager.eventLoop(index);
             flusher = flusherFactory.apply(index);
-            semaphore = new Semaphore(10);
+            semaphore = new Semaphore(maxConcurrencyPerThread);
         }
 
         @Override
@@ -112,10 +114,11 @@ public class BatchProcessor<T> {
         private void flush() {
             List<T> bufferCopy = new ArrayList<>(buffer);
             buffer.clear();
+            // 能不能复用 bufferCopy?
             if (semaphore.tryAcquire()) {
                 flusher.flush(bufferCopy, this);
             } else {
-                flusher.onMissingSemaphore(bufferCopy, semaphore);
+                flusher.onMissingSemaphore(bufferCopy, semaphore, this);
             }
         }
 

@@ -1,13 +1,14 @@
 package com.xzchaoo.eventloop.batchprocessor;
 
-import com.xzchaoo.eventloop.AbstractEventLoopManager;
-import com.xzchaoo.eventloop.EventLoopManagerConfig;
-import com.xzchaoo.eventloop.disruptor.DisruptorEventLoopManager;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
 
 import org.junit.Test;
 
-import java.util.List;
-import java.util.concurrent.Semaphore;
+import com.xzchaoo.eventloop.AbstractEventLoopManager;
+import com.xzchaoo.eventloop.EventLoopManagerConfig;
+import com.xzchaoo.eventloop.disruptor.DisruptorEventLoopManager;
 
 /**
  * created at 2020/3/21
@@ -18,17 +19,18 @@ public class BatchProcessorTest {
     @Test
     public void test() throws InterruptedException {
         EventLoopManagerConfig p = new EventLoopManagerConfig();
-        p.setSize(4);
+        p.setSize(1);
         p.setName("test");
         AbstractEventLoopManager manager = new DisruptorEventLoopManager(p);
         manager.start();
         BatchProcessor<String> batchProcessor = new BatchProcessor<>(manager, MyFlusher::new);
         batchProcessor.start();
+        List<String> list = new ArrayList<>();
+        list.add("1");
+        list.add("2");
+        list.add("3");
         for (int i = 0; i < 1000; i++) {
-            batchProcessor.put("1");
-            batchProcessor.put("2");
-            batchProcessor.put("3");
-            batchProcessor.put("4");
+            batchProcessor.put(list);
         }
         Thread.sleep(2000);
     }
@@ -38,12 +40,12 @@ public class BatchProcessorTest {
         }
 
         @Override
-        public void onMissingSemaphore(List<String> buffer, Semaphore semaphore) {
-            System.out.println(buffer.size());
+        public void onMissingSemaphore(List<String> buffer, Semaphore semaphore, Context<String> ctx) {
+            System.out.println("丢弃数据 " + buffer.size());
         }
 
         @Override
-        public void flush(List<String> buffer, Context ctx) {
+        public void flush(List<String> buffer, Context<String> ctx) {
             try {
                 System.out.println(buffer.size());
             } finally {
