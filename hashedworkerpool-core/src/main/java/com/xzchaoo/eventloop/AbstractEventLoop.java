@@ -104,6 +104,7 @@ public abstract class AbstractEventLoop implements EventLoop {
 
     @Override
     public final void stop() {
+        // TODO EventLoop 本身应该不需要这个保护
         int state = this.state;
         if (state == STATE_RUNNING) {
             if (UPDATER.compareAndSet(this, state, STATE_STOPPED)) {
@@ -193,6 +194,21 @@ public abstract class AbstractEventLoop implements EventLoop {
     }
 
     @Override
+    public void unregister3(int type) {
+        for (; ; ) {
+            Map<Integer, Consumer<?>> processMap = this.processMap3;
+            if (!processMap.containsKey(type)) {
+                return;
+            }
+            Map<Integer, Consumer<?>> newProcessMap = new HashMap<>(this.processMap3);
+            newProcessMap.remove(type);
+            if (PROCESS_MAP3_UPDATER.compareAndSet(this, processMap, newProcessMap)) {
+                break;
+            }
+        }
+    }
+
+    @Override
     public boolean inEventLoop() {
         return eventLoopThread == Thread.currentThread();
     }
@@ -231,4 +247,6 @@ public abstract class AbstractEventLoop implements EventLoop {
     public int index() {
         return index;
     }
+
+
 }

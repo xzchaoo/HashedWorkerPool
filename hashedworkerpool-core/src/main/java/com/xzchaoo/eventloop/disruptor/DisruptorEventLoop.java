@@ -26,12 +26,12 @@ public class DisruptorEventLoop extends AbstractEventLoop {
         super(config, manager);
         int eventLoopBufferSize = config.getManagerConfig().getEventLoopBufferSize();
         SingleThreadFactory eventLoopThreadFactory = config.getEventLoopThreadFactory();
-        disruptor = new Disruptor<>(() -> new Event<>(index), eventLoopBufferSize, eventLoopThreadFactory,
+        this.disruptor = new Disruptor<>(() -> new Event<>(index), eventLoopBufferSize, eventLoopThreadFactory,
             ProducerType.MULTI, waitStrategy);
         // TODO
         // disruptor.setDefaultExceptionHandler();
-        disruptor.handleEventsWith(this::onEvent);
-        ringBuffer = disruptor.getRingBuffer();
+        this.disruptor.handleEventsWith(this::onEvent);
+        this.ringBuffer = disruptor.getRingBuffer();
     }
 
     private void onEvent(Event<Object> event, long sequence, boolean endOfBatch) {

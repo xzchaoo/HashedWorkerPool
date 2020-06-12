@@ -10,7 +10,6 @@ import com.xzchaoo.eventloop.SingleThreadFactory;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class ConcurrencyEventLoop extends SelfManageThreadEventLoop {
 

@@ -87,7 +87,6 @@ public class HashedWorkerPoolImpl implements HashedWorkerPool {
     private <P> void doPublish(int hash, int index, P payload, Consumer<P> consumer) {
         long next = ringBuffer.next();
         EventHolder holder = ringBuffer.get(next);
-        holder.reset();
         holder.hash = hash;
         holder.index = index;
         holder.payload = payload;

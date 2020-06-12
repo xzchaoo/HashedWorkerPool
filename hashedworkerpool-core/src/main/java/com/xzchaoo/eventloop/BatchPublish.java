@@ -8,7 +8,6 @@ import lombok.Setter;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class BatchPublish {
     @Getter

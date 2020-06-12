@@ -10,7 +10,6 @@ import lombok.Setter;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class SingleThreadFactory implements ThreadFactory {
     private final String           name;

@@ -1,5 +1,7 @@
 package com.xzchaoo.eventloop.batchprocessor;
 
+import com.xzchaoo.eventloop.EventLoop;
+
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
@@ -9,15 +11,21 @@ import java.util.concurrent.Semaphore;
  * @author xzchaoo
  */
 public interface Flusher<T> {
-    void onMissingSemaphore(List<T> buffer, Semaphore semaphore);
+    void onMissingSemaphore(List<T> buffer, Context ctx);
 
     void flush(List<T> buffer, Context ctx);
 
     interface Context<T> {
         void complete();
 
-        void retry(Throwable e, long delayMills, List<T> buffer);
+        EventLoop eventLoop();
 
-        void error(Throwable e);
+        Semaphore semaphore();
+
+        void retry(long delayMills, List<T> buffer);
+
+        int getMaxRetryCount();
+
+        int getRetryCount();
     }
 }

@@ -7,7 +7,6 @@ import com.xzchaoo.eventloop.EventLoopManagerConfig;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class ThreadPoolEventLoopManager extends AbstractEventLoopManager {
 

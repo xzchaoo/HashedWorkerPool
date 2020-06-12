@@ -8,7 +8,6 @@ import org.junit.Test;
 
 /**
  * @author xzchaoo
- * @date 2019-09-18
  */
 public class HashedWorkerPoolImplTest {
     @Test

@@ -12,7 +12,6 @@ import com.xzchaoo.eventloop.concurrency.SelfManageThreadEventLoop;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class MpscEventLoop extends SelfManageThreadEventLoop {
     private static final Logger                        LOGGER = LoggerFactory.getLogger(MpscEventLoop.class);

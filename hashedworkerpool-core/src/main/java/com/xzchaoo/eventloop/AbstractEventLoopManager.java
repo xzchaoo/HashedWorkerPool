@@ -155,6 +155,13 @@ public abstract class AbstractEventLoopManager implements EventLoopManager {
     }
 
     @Override
+    public void unregister3(int type) {
+        for (int i = 0; i < size; i++) {
+            eventLoops[i].unregister3(type);
+        }
+    }
+
+    @Override
     public void batchPublish(BatchPublish batch) {
         if (batch == null) {
             return;

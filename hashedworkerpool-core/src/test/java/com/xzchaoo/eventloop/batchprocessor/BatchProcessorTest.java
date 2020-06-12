@@ -1,6 +1,6 @@
 package com.xzchaoo.eventloop.batchprocessor;
 
-import com.xzchaoo.eventloop.AbstractEventLoopManager;
+import com.xzchaoo.eventloop.EventLoopManager;
 import com.xzchaoo.eventloop.EventLoopManagerConfig;
 import com.xzchaoo.eventloop.disruptor.DisruptorEventLoopManager;
 
@@ -20,9 +20,13 @@ public class BatchProcessorTest {
         EventLoopManagerConfig p = new EventLoopManagerConfig();
         p.setSize(4);
         p.setName("test");
-        AbstractEventLoopManager manager = new DisruptorEventLoopManager(p);
+        EventLoopManager manager = new DisruptorEventLoopManager(p);
         manager.start();
-        BatchProcessor<String> batchProcessor = new BatchProcessor<>(manager, MyFlusher::new);
+
+        BatchProcessorConfig bpc = new BatchProcessorConfig();
+        bpc.setBufferSize(100);
+        BatchProcessor<String> batchProcessor = new BatchProcessor<>(manager, bpc,
+            MyFlusher::new);
         batchProcessor.start();
         for (int i = 0; i < 1000; i++) {
             batchProcessor.put("1");
@@ -38,14 +42,14 @@ public class BatchProcessorTest {
         }
 
         @Override
-        public void onMissingSemaphore(List<String> buffer, Semaphore semaphore) {
+        public void onMissingSemaphore(List<String> buffer, Context ctx) {
             System.out.println(buffer.size());
         }
 
         @Override
         public void flush(List<String> buffer, Context ctx) {
             try {
-                System.out.println(buffer.size());
+                System.out.println("flush " + buffer.size());
             } finally {
                 ctx.complete();
             }

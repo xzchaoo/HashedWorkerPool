@@ -12,7 +12,6 @@ import com.xzchaoo.eventloop.EventLoopManager;
 
 /**
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class ThreadPoolEventLoop extends AbstractEventLoop {
 

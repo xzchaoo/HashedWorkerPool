@@ -8,7 +8,6 @@ import com.xzchaoo.eventloop.EventLoopThread;
  * TODO same as netty's FastThreadLocal
  *
  * @author xiangfeng.xzc
- * @date 2020-03-20
  */
 public class FastThreadLocal<T> {
     private static final AtomicInteger INDEX = new AtomicInteger();

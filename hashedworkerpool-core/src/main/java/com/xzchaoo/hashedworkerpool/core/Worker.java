@@ -2,7 +2,6 @@ package com.xzchaoo.hashedworkerpool.core;
 
 /**
  * @author xiangfeng.xzc
- * @date 2019-09-11
  */
 class Worker implements com.lmax.disruptor.EventHandler<EventHolder> {
     private final int workerIndex;
@@ -16,6 +15,10 @@ class Worker implements com.lmax.disruptor.EventHandler<EventHolder> {
         if (workerIndex != holder.index) {
             return;
         }
-        holder.consumer.consume(holder.hash, holder.index, holder.payload);
+        try {
+            holder.consumer.consume(holder.hash, holder.index, holder.payload);
+        } finally {
+            holder.reset();
+        }
     }
 }

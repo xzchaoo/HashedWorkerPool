@@ -7,13 +7,13 @@ package com.xzchaoo.hashedworkerpool.core;
  */
 public class EventHolder<P> {
     int         hash;
-    int         index;
+    int         index = -1;
     P           payload;
     Consumer<P> consumer;
 
     public void reset() {
         hash = 0;
-        index = 0;
+        index = -1;
         payload = null;
         consumer = null;
     }

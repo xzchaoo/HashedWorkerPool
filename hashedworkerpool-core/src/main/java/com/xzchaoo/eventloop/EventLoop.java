@@ -70,4 +70,6 @@ public interface EventLoop {
     <P> void register2(Object type, ConsumerFactory<P> factory);
 
     <P> void register3(int type, ConsumerFactory<P> factory);
+
+    void unregister3(int type);
 }
