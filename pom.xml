@@ -7,7 +7,7 @@
 	<groupId>com.xzchaoo.hashedworkerpool</groupId>
 	<artifactId>hashedworkerpool-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>1.1.1</version>
+	<version>1.1.2-SNAPSHOT</version>
 	<modules>
 		<module>hashedworkerpool-core</module>
 	</modules>

@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>hashedworkerpool-parent</artifactId>
 		<groupId>com.xzchaoo.hashedworkerpool</groupId>
-		<version>1.1.1</version>
+		<version>1.1.2-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -19,18 +19,6 @@
 		<dependency>
 			<groupId>com.lmax</groupId>
 			<artifactId>disruptor</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>26.0-jre</version>
-			<!--<scope>test</scope>-->
-		</dependency>
-		<dependency>
-			<groupId>org.jctools</groupId>
-			<artifactId>jctools-core</artifactId>
-			<version>3.0.0</version>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
